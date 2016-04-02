@@ -673,7 +673,7 @@ private class RACellFakeView: UIView {
 }
 
 // Convenience method
-func ~= (obj:NSObjectProtocol?, r:UIGestureRecognizer) -> Bool
+private func ~= (obj:NSObjectProtocol?, r:UIGestureRecognizer) -> Bool
 {
     return r.isEqual(obj)
 }
