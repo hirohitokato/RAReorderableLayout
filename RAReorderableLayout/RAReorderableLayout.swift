@@ -15,6 +15,10 @@ import UIKit
     optional func collectionView(collectionView: UICollectionView, allowMoveAtIndexPath indexPath: NSIndexPath) -> Bool
     optional func collectionView(collectionView: UICollectionView, atIndexPath: NSIndexPath, canMoveToIndexPath: NSIndexPath) -> Bool
     
+    optional func collectionView(collectionView: UICollectionView, willRemoveAtIndexPath indexPath: NSIndexPath)
+    optional func collectionView(collectionView: UICollectionView, didRemoveAtIndexPath indexPath: NSIndexPath)
+    optional func collectionView(collectionView: UICollectionView, canRemoveAtIndexPath indexPath: NSIndexPath) -> Bool
+    
     optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willBeginDraggingItemAtIndexPath indexPath: NSIndexPath)
     optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, didBeginDraggingItemAtIndexPath indexPath: NSIndexPath)
     optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willEndDraggingItemToIndexPath indexPath: NSIndexPath)
@@ -52,6 +56,11 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
             let proofedPercentage: CGFloat = max(min(1.0, percentage), 0)
             return value * proofedPercentage
         }
+    }
+    
+    private enum actionType {
+        case normal
+        case removed
     }
     
     public weak var delegate: RAReorderableLayoutDelegate? {
@@ -342,11 +351,13 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         cancelDrag(toIndexPath: nil)
     }
     
-    private func cancelDrag(toIndexPath toIndexPath: NSIndexPath!) {
+    private func cancelDrag(toIndexPath toIndexPath: NSIndexPath!, type: actionType = .normal) {
         guard cellFakeView != nil else { return }
         
         // will end drag item
-        delegate?.collectionView?(collectionView!, collectionViewLayout: self, willEndDraggingItemToIndexPath: toIndexPath)
+        if type == .normal {
+            delegate?.collectionView?(collectionView!, collectionViewLayout: self, willEndDraggingItemToIndexPath: toIndexPath)
+        }
         
         collectionView?.scrollsToTop = true
         
@@ -354,13 +365,22 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         
         invalidateDisplayLink()
         
-        cellFakeView!.pushBackView {
+        let completionHandler = { [unowned self] in
             self.cellFakeView!.removeFromSuperview()
             self.cellFakeView = nil
             self.invalidateLayout()
             
             // did end drag item
-            self.delegate?.collectionView?(self.collectionView!, collectionViewLayout: self, didEndDraggingItemToIndexPath: toIndexPath)
+            if type == .normal {
+                self.delegate?.collectionView?(self.collectionView!, collectionViewLayout: self, didEndDraggingItemToIndexPath: toIndexPath)
+            }
+        }
+        
+        switch type {
+        case .normal:
+            cellFakeView!.pushBackView(completionHandler)
+        case .removed:
+            cellFakeView!.eraseView(completionHandler)
         }
     }
     
@@ -398,8 +418,11 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
             
             // did begin drag item
             delegate?.collectionView?(collectionView!, collectionViewLayout: self, didBeginDraggingItemAtIndexPath: indexPath!)
-        case .Cancelled, .Ended:
+        case .Cancelled:
             cancelDrag(toIndexPath: indexPath)
+        case .Ended:
+            let removed: actionType = removeItemIfNeeded() ? .removed : .normal
+            cancelDrag(toIndexPath: indexPath, type: removed)
         default:
             break
         }
@@ -416,9 +439,12 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
                 cellFakeView.center.x = fakeCellCenter.x + panTranslation.x
                 cellFakeView.center.y = fakeCellCenter.y + panTranslation.y
                 
+                handleRemovability()
                 beginScrollIfNeeded()
                 moveItemIfNeeded()
-            case .Cancelled, .Ended:
+            case .Cancelled:
+                invalidateDisplayLink()
+            case .Ended:
                 invalidateDisplayLink()
             default:
                 break
@@ -472,6 +498,49 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         }
 
         return true
+    }
+}
+
+private extension RAReorderableLayout {
+    private func handleRemovability() {
+        let overlapped = isOverlapped(collectionView, withView: cellFakeView)
+        let removable = delegate?.collectionView?(collectionView!, canRemoveAtIndexPath: cellFakeView!.indexPath!) ?? false
+
+        if !overlapped && removable {
+            cellFakeView?.alpha = 0.5
+        } else {
+            cellFakeView?.alpha = 1.0
+        }
+    }
+    
+    private func removeItemIfNeeded() -> Bool {
+        let overlapped = isOverlapped(collectionView, withView: cellFakeView)
+        let removable = delegate?.collectionView?(collectionView!, canRemoveAtIndexPath: cellFakeView!.indexPath!) ?? false
+        if !overlapped && removable {
+            // will remove the item
+            self.delegate?.collectionView?(self.collectionView!, willRemoveAtIndexPath: self.cellFakeView!.indexPath!)
+            collectionView!.performBatchUpdates({
+                // Remove the item only if the delegate object have the callback.
+                if let callback = self.delegate?.collectionView(_: didRemoveAtIndexPath:) {
+                    self.collectionView!.deleteItemsAtIndexPaths([self.cellFakeView!.indexPath!])
+                    
+                    // did remove the item
+                    callback(self.collectionView!, didRemoveAtIndexPath: self.cellFakeView!.indexPath!)
+                }
+                }, completion:nil)
+            return true
+        } else {
+            return false
+        }
+    }
+
+    private func isOverlapped(view: UIView?, withView otherView: UIView?) -> Bool {
+        if let view = view, otherView = otherView {
+            let viewFrame = view.frame
+            let otherViewFrame = view.convertRect(otherView.frame, toView: view.superview)
+            return CGRectIntersectsRect(viewFrame, otherViewFrame)
+        }
+        return false
     }
 }
 
@@ -571,6 +640,22 @@ private class RACellFakeView: UIView {
                 shadowAnimation.removedOnCompletion = false
                 shadowAnimation.fillMode = kCAFillModeForwards
                 self.layer.addAnimation(shadowAnimation, forKey: "removeShadow")
+            },
+            completion: { _ in
+                completion?()
+            }
+        )
+    }
+    
+    func eraseView(completion: (()->Void)?) {
+        self.alpha = 1.0
+        UIView.animateWithDuration(
+            0.3,
+            delay: 0,
+            options: [.CurveEaseInOut, .BeginFromCurrentState],
+            animations: { 
+                self.transform = CGAffineTransformIdentity
+                self.alpha = 0.0
             },
             completion: { _ in
                 completion?()
