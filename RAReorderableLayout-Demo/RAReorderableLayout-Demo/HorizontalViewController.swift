@@ -95,6 +95,14 @@ class HorizontalViewController: UIViewController, RAReorderableLayoutDelegate, R
     func scrollSpeedValueInCollectionView(collectionView: UICollectionView) -> CGFloat {
         return 15.0
     }
+    
+    func collectionView(collectionView: UICollectionView, canRemoveAtIndexPath indexPath: NSIndexPath) -> Bool {
+        return true
+    }
+    
+    func collectionView(collectionView: UICollectionView, didRemoveAtIndexPath indexPath: NSIndexPath) {
+        books.removeAtIndex(indexPath.item)
+    }
 }
 
 class BookCell: UICollectionViewCell {
