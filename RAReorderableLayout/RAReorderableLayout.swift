@@ -9,30 +9,30 @@
 import UIKit
 
 @objc public protocol RAReorderableLayoutDelegate: UICollectionViewDelegateFlowLayout {
-    optional func collectionView(collectionView: UICollectionView, atIndexPath: NSIndexPath, willMoveToIndexPath toIndexPath: NSIndexPath)
-    optional func collectionView(collectionView: UICollectionView, atIndexPath: NSIndexPath, didMoveToIndexPath toIndexPath: NSIndexPath)
+    @objc optional func collectionView(collectionView: UICollectionView, atIndexPath: NSIndexPath, willMoveToIndexPath toIndexPath: NSIndexPath)
+    @objc optional func collectionView(collectionView: UICollectionView, atIndexPath: NSIndexPath, didMoveToIndexPath toIndexPath: NSIndexPath)
     
-    optional func collectionView(collectionView: UICollectionView, allowMoveAtIndexPath indexPath: NSIndexPath) -> Bool
-    optional func collectionView(collectionView: UICollectionView, atIndexPath: NSIndexPath, canMoveToIndexPath: NSIndexPath) -> Bool
+    @objc optional func collectionView(collectionView: UICollectionView, allowMoveAtIndexPath indexPath: NSIndexPath) -> Bool
+    @objc optional func collectionView(collectionView: UICollectionView, atIndexPath: NSIndexPath, canMoveToIndexPath: NSIndexPath) -> Bool
     
-    optional func collectionView(collectionView: UICollectionView, willRemoveAtIndexPath indexPath: NSIndexPath)
-    optional func collectionView(collectionView: UICollectionView, didRemoveAtIndexPath indexPath: NSIndexPath)
-    optional func collectionView(collectionView: UICollectionView, canRemoveAtIndexPath indexPath: NSIndexPath) -> Bool
+    @objc optional func collectionView(collectionView: UICollectionView, willRemoveAtIndexPath indexPath: NSIndexPath)
+    @objc optional func collectionView(collectionView: UICollectionView, didRemoveAtIndexPath indexPath: NSIndexPath)
+    @objc optional func collectionView(collectionView: UICollectionView, canRemoveAtIndexPath indexPath: NSIndexPath) -> Bool
     
-    optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willBeginDraggingItemAtIndexPath indexPath: NSIndexPath)
-    optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, didBeginDraggingItemAtIndexPath indexPath: NSIndexPath)
-    optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willEndDraggingItemToIndexPath indexPath: NSIndexPath)
-    optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, didEndDraggingItemToIndexPath indexPath: NSIndexPath)
+    @objc optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willBeginDraggingItemAtIndexPath indexPath: NSIndexPath)
+    @objc optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, didBeginDraggingItemAtIndexPath indexPath: NSIndexPath)
+    @objc optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willEndDraggingItemToIndexPath indexPath: NSIndexPath)
+    @objc optional func collectionView(collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, didEndDraggingItemToIndexPath indexPath: NSIndexPath)
 }
 
 @objc public protocol RAReorderableLayoutDataSource: UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int
     
-    optional func collectionView(collectionView: UICollectionView, reorderingItemAlphaInSection section: Int) -> CGFloat
-    optional func scrollTrigerEdgeInsetsInCollectionView(collectionView: UICollectionView) -> UIEdgeInsets
-    optional func scrollTrigerPaddingInCollectionView(collectionView: UICollectionView) -> UIEdgeInsets
-    optional func scrollSpeedValueInCollectionView(collectionView: UICollectionView) -> CGFloat
+    @objc optional func collectionView(collectionView: UICollectionView, reorderingItemAlphaInSection section: Int) -> CGFloat
+    @objc optional func scrollTrigerEdgeInsetsInCollectionView(collectionView: UICollectionView) -> UIEdgeInsets
+    @objc optional func scrollTrigerPaddingInCollectionView(collectionView: UICollectionView) -> UIEdgeInsets
+    @objc optional func scrollSpeedValueInCollectionView(collectionView: UICollectionView) -> CGFloat
 }
 
 public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognizerDelegate {
@@ -42,12 +42,12 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         case toEnd
         case stay
         
-        private func scrollValue(speedValue speedValue: CGFloat, percentage: CGFloat) -> CGFloat {
+        private func scrollValue(speedValue: CGFloat, percentage: CGFloat) -> CGFloat {
             var value: CGFloat = 0.0
             switch self {
-            case toTop:
+            case .toTop:
                 value = -speedValue
-            case toEnd:
+            case .toEnd:
                 value = speedValue
             case .stay:
                 return 0
@@ -89,63 +89,63 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
     
     public var trigerInsets: UIEdgeInsets = UIEdgeInsetsMake(100.0, 100.0, 100.0, 100.0)
     
-    public var trigerPadding: UIEdgeInsets = UIEdgeInsetsZero
+    public var trigerPadding: UIEdgeInsets = .zero
     
     public var scrollSpeedValue: CGFloat = 10.0
     
     private var offsetFromTop: CGFloat {
         let contentOffset = collectionView!.contentOffset
-        return scrollDirection == .Vertical ? contentOffset.y : contentOffset.x
+        return scrollDirection == .vertical ? contentOffset.y : contentOffset.x
     }
     
     private var insetsTop: CGFloat {
         let contentInsets = collectionView!.contentInset
-        return scrollDirection == .Vertical ? contentInsets.top : contentInsets.left
+        return scrollDirection == .vertical ? contentInsets.top : contentInsets.left
     }
     
     private var insetsEnd: CGFloat {
         let contentInsets = collectionView!.contentInset
-        return scrollDirection == .Vertical ? contentInsets.bottom : contentInsets.right
+        return scrollDirection == .vertical ? contentInsets.bottom : contentInsets.right
     }
     
     private var contentLength: CGFloat {
         let contentSize = collectionView!.contentSize
-        return scrollDirection == .Vertical ? contentSize.height : contentSize.width
+        return scrollDirection == .vertical ? contentSize.height : contentSize.width
     }
     
     private var collectionViewLength: CGFloat {
         let collectionViewSize = collectionView!.bounds.size
-        return scrollDirection == .Vertical ? collectionViewSize.height : collectionViewSize.width
+        return scrollDirection == .vertical ? collectionViewSize.height : collectionViewSize.width
     }
     
     private var fakeCellTopEdge: CGFloat? {
         if let fakeCell = cellFakeView {
-            return scrollDirection == .Vertical ? CGRectGetMinY(fakeCell.frame) : CGRectGetMinX(fakeCell.frame)
+            return scrollDirection == .vertical ? fakeCell.frame.minY : fakeCell.frame.minX
         }
         return nil
     }
     
     private var fakeCellEndEdge: CGFloat? {
         if let fakeCell = cellFakeView {
-            return scrollDirection == .Vertical ? CGRectGetMaxY(fakeCell.frame) : CGRectGetMaxX(fakeCell.frame)
+            return scrollDirection == .vertical ? fakeCell.frame.maxY : fakeCell.frame.maxX
         }
         return nil
     }
     
     private var triggerInsetTop: CGFloat {
-        return scrollDirection == .Vertical ? trigerInsets.top : trigerInsets.left
+        return scrollDirection == .vertical ? trigerInsets.top : trigerInsets.left
     }
     
     private var triggerInsetEnd: CGFloat {
-        return scrollDirection == .Vertical ? trigerInsets.top : trigerInsets.left
+        return scrollDirection == .vertical ? trigerInsets.top : trigerInsets.left
     }
     
     private var triggerPaddingTop: CGFloat {
-        return scrollDirection == .Vertical ? trigerPadding.top : trigerPadding.left
+        return scrollDirection == .vertical ? trigerPadding.top : trigerPadding.left
     }
     
     private var triggerPaddingEnd: CGFloat {
-        return scrollDirection == .Vertical ? trigerPadding.bottom : trigerPadding.right
+        return scrollDirection == .vertical ? trigerPadding.bottom : trigerPadding.right
     }
     
     required public init?(coder aDecoder: NSCoder) {
@@ -162,32 +162,32 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         removeObserver(self, forKeyPath: "collectionView")
     }
     
-    override public func prepareLayout() {
-        super.prepareLayout()
+    override public func prepare() {
+        super.prepare()
         
         // scroll trigger insets
-        if let insets = datasource?.scrollTrigerEdgeInsetsInCollectionView?(self.collectionView!) {
+        if let insets = datasource?.scrollTrigerEdgeInsetsInCollectionView?(collectionView: self.collectionView!) {
             trigerInsets = insets
         }
         
         // scroll trier padding
-        if let padding = datasource?.scrollTrigerPaddingInCollectionView?(self.collectionView!) {
+        if let padding = datasource?.scrollTrigerPaddingInCollectionView?(collectionView: self.collectionView!) {
             trigerPadding = padding
         }
         
         // scroll speed value
-        if let speed = datasource?.scrollSpeedValueInCollectionView?(collectionView!) {
+        if let speed = datasource?.scrollSpeedValueInCollectionView?(collectionView: collectionView!) {
             scrollSpeedValue = speed
         }
     }
     
-    override public func layoutAttributesForElementsInRect(rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
-        guard let attributesArray = super.layoutAttributesForElementsInRect(rect) else { return nil }
+    override public func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+        guard let attributesArray = super.layoutAttributesForElements(in: rect) else { return nil }
 
         attributesArray.filter {
             $0.representedElementCategory == .Cell
         }.filter {
-            $0.indexPath.isEqual(cellFakeView?.indexPath)
+            $0.indexPath == cellFakeView?.indexPath
         }.forEach {
             // reordering cell alpha
             $0.alpha = datasource?.collectionView?(collectionView!, reorderingItemAlphaInSection: $0.indexPath.section) ?? 0
@@ -196,7 +196,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         return attributesArray
     }
     
-    public override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+    public override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutableRawPointer) {
         if keyPath == "collectionView" {
             setUpGestureRecognizers()
         }else {
@@ -214,7 +214,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         }
         
         displayLink = CADisplayLink(target: self, selector: #selector(RAReorderableLayout.continuousScroll))
-        displayLink!.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSRunLoopCommonModes)
+        displayLink!.add(to: RunLoop.main, forMode: .commonModes)
     }
     
     private func invalidateDisplayLink() {
@@ -249,28 +249,28 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         guard !atIndexPath.isEqual(toIndexPath) else { return }
         
         // can move item
-        if let canMove = delegate?.collectionView?(collectionView!, atIndexPath: atIndexPath, canMoveToIndexPath: toIndexPath) where !canMove {
+        if let canMove = delegate?.collectionView?(collectionView!, atIndexPath: atIndexPath, canMoveToIndexPath: toIndexPath), !canMove {
             return
         }
         
         // will move item
         delegate?.collectionView?(collectionView!, atIndexPath: atIndexPath, willMoveToIndexPath: toIndexPath)
         
-        let attribute = self.layoutAttributesForItemAtIndexPath(toIndexPath)!
+        let attribute = self.layoutAttributesForItem(at: toIndexPath)!
         collectionView!.performBatchUpdates({
             fakeCell.indexPath = toIndexPath
             fakeCell.cellFrame = attribute.frame
-            fakeCell.changeBoundsIfNeeded(attribute.bounds)
+            fakeCell.changeBoundsIfNeeded(bounds: attribute.bounds)
             
             self.collectionView!.deleteItemsAtIndexPaths([atIndexPath])
-            self.collectionView!.insertItemsAtIndexPaths([toIndexPath])
+            self.collectionView!.insertItems(at: [toIndexPath])
             
             // did move item
             self.delegate?.collectionView?(self.collectionView!, atIndexPath: atIndexPath, didMoveToIndexPath: toIndexPath)
             }, completion:nil)
     }
     
-    internal func continuousScroll() {
+    @objc internal func continuousScroll() {
         guard let fakeCell = cellFakeView else { return }
         
         let percentage = calcTriggerPercentage()
@@ -290,7 +290,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         }
         
         collectionView!.performBatchUpdates({
-            if self.scrollDirection == .Vertical {
+            if self.scrollDirection == .vertical {
                 self.fakeCellCenter?.y += scrollRate
                 fakeCell.center.y = self.fakeCellCenter!.y + self.panTranslation!.y
                 self.collectionView?.contentOffset.y += scrollRate
