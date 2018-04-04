@@ -9,26 +9,25 @@
 import UIKit
 
 @objc public protocol RAReorderableLayoutDelegate: UICollectionViewDelegateFlowLayout {
-    @objc optional func collectionView(_ collectionView: UICollectionView, atIndexPath: IndexPath, willMoveToIndexPath toIndexPath: IndexPath)
-    @objc optional func collectionView(_ collectionView: UICollectionView, atIndexPath: IndexPath, didMoveToIndexPath toIndexPath: IndexPath)
+    @objc optional func collectionView(_ collectionView: UICollectionView, at indexPath: IndexPath, willMoveTo toIndexPath: IndexPath)
+    @objc optional func collectionView(_ collectionView: UICollectionView, at indexPath: IndexPath, didMoveTo toIndexPath: IndexPath)
     
-    @objc optional func collectionView(_ collectionView: UICollectionView, allowMoveAtIndexPath indexPath: IndexPath) -> Bool
-    @objc optional func collectionView(_ collectionView: UICollectionView, atIndexPath: IndexPath, canMoveToIndexPath: IndexPath) -> Bool
+    @objc optional func collectionView(_ collectionView: UICollectionView, allowMoveAt indexPath: IndexPath) -> Bool
+    @objc optional func collectionView(_ collectionView: UICollectionView, at indexPath: IndexPath, canMoveTo toIndexPath: IndexPath) -> Bool
     
-    @objc optional func collectionView(_ collectionView: UICollectionView, willRemoveAtIndexPath indexPath: IndexPath)
-    @objc optional func collectionView(_ collectionView: UICollectionView, didRemoveAtIndexPath indexPath: IndexPath)
-    @objc optional func collectionView(_ collectionView: UICollectionView, canRemoveAtIndexPath indexPath: IndexPath) -> Bool
+    @objc optional func collectionView(_ collectionView: UICollectionView, willRemoveAt indexPath: IndexPath)
+    @objc optional func collectionView(_ collectionView: UICollectionView, didRemoveAt indexPath: IndexPath)
+    @objc optional func collectionView(_ collectionView: UICollectionView, canRemoveAt indexPath: IndexPath) -> Bool
     
-    @objc optional func collectionView(_ collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willBeginDraggingItemAtIndexPath indexPath: IndexPath)
-    @objc optional func collectionView(_ collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, didBeginDraggingItemAtIndexPath indexPath: IndexPath)
-    @objc optional func collectionView(_ collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willEndDraggingItemToIndexPath indexPath: IndexPath)
-    @objc optional func collectionView(_ collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, didEndDraggingItemToIndexPath indexPath: IndexPath)
+    @objc optional func collectionView(_ collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willBeginDraggingItemAt indexPath: IndexPath)
+    @objc optional func collectionView(_ collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, didBeginDraggingItemAt indexPath: IndexPath)
+    @objc optional func collectionView(_ collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, willEndDraggingItemTo indexPath: IndexPath)
+    @objc optional func collectionView(_ collectionView: UICollectionView, collectionViewLayout layout: RAReorderableLayout, didEndDraggingItemTo indexPath: IndexPath)
 }
 
 @objc public protocol RAReorderableLayoutDataSource: UICollectionViewDataSource {
-    func collectionView(_ collectionView: UICollectionView, cellForItemAtIndexPath indexPath: IndexPath) -> UICollectionViewCell
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int
-    
+
     @objc optional func collectionView(_ collectionView: UICollectionView, reorderingItemAlphaInSection section: Int) -> CGFloat
     @objc optional func scrollTrigerEdgeInsetsInCollectionView(_ collectionView: UICollectionView) -> UIEdgeInsets
     @objc optional func scrollTrigerPaddingInCollectionView(_ collectionView: UICollectionView) -> UIEdgeInsets
@@ -252,12 +251,12 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         guard atIndexPath != toIndexPath else { return }
         
         // can move item
-        if let canMove = delegate?.collectionView?(collectionView!, atIndexPath: atIndexPath, canMoveToIndexPath: toIndexPath), !canMove {
+        if let canMove = delegate?.collectionView?(collectionView!, at: atIndexPath, canMoveTo: toIndexPath), !canMove {
             return
         }
         
         // will move item
-        delegate?.collectionView?(collectionView!, atIndexPath: atIndexPath, willMoveToIndexPath: toIndexPath)
+        delegate?.collectionView?(collectionView!, at: atIndexPath, willMoveTo: toIndexPath)
         
         let attribute = self.layoutAttributesForItem(at: toIndexPath)!
         collectionView!.performBatchUpdates({
@@ -269,7 +268,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
             self.collectionView!.insertItems(at: [toIndexPath])
             
             // did move item
-            self.delegate?.collectionView?(self.collectionView!, atIndexPath: atIndexPath, didMoveToIndexPath: toIndexPath)
+            self.delegate?.collectionView?(self.collectionView!, at: atIndexPath, didMoveTo: toIndexPath)
             }, completion:nil)
     }
     
@@ -359,7 +358,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         
         // will end drag item
         if type == .normal {
-            delegate?.collectionView?(collectionView!, collectionViewLayout: self, willEndDraggingItemToIndexPath: toIndexPath)
+            delegate?.collectionView?(collectionView!, collectionViewLayout: self, willEndDraggingItemTo: toIndexPath)
         }
         
         collectionView?.scrollsToTop = true
@@ -375,7 +374,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
             
             // did end drag item
             if type == .normal {
-                self.delegate?.collectionView?(self.collectionView!, collectionViewLayout: self, didEndDraggingItemToIndexPath: toIndexPath)
+                self.delegate?.collectionView?(self.collectionView!, collectionViewLayout: self, didEndDraggingItemTo: toIndexPath)
             }
         }
         
@@ -401,7 +400,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         switch longPress.state {
         case .began:
             // will begin drag item
-            delegate?.collectionView?(collectionView!, collectionViewLayout: self, willBeginDraggingItemAtIndexPath: indexPath!)
+            delegate?.collectionView?(collectionView!, collectionViewLayout: self, willBeginDraggingItemAt: indexPath!)
             
             collectionView?.scrollsToTop = false
             
@@ -420,7 +419,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
             cellFakeView?.pushFowardView()
             
             // did begin drag item
-            delegate?.collectionView?(collectionView!, collectionViewLayout: self, didBeginDraggingItemAtIndexPath: indexPath!)
+            delegate?.collectionView?(collectionView!, collectionViewLayout: self, didBeginDraggingItemAt: indexPath!)
         case .cancelled:
             cancelDrag(toIndexPath: indexPath)
         case .ended:
@@ -460,7 +459,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         // allow move item
         let location = gestureRecognizer.location(in: collectionView)
         if let indexPath = collectionView?.indexPathForItem(at: location),
-            delegate?.collectionView?(collectionView!, allowMoveAtIndexPath: indexPath) == false {
+            delegate?.collectionView?(collectionView!, allowMoveAt: indexPath) == false {
             return false
         }
         
@@ -507,7 +506,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
 private extension RAReorderableLayout {
     private func handleRemovability() {
         let overlapped = isOverlapped(view: collectionView, withView: cellFakeView)
-        let removable = delegate?.collectionView?(collectionView!, canRemoveAtIndexPath: cellFakeView!.indexPath!) ?? false
+        let removable = delegate?.collectionView?(collectionView!, canRemoveAt: cellFakeView!.indexPath!) ?? false
 
         if !overlapped && removable {
             cellFakeView?.alpha = 0.5
@@ -518,13 +517,13 @@ private extension RAReorderableLayout {
     
     private func removeItemIfNeeded() -> Bool {
         let overlapped = isOverlapped(view: collectionView, withView: cellFakeView)
-        let removable = delegate?.collectionView?(collectionView!, canRemoveAtIndexPath: cellFakeView!.indexPath!) ?? false
+        let removable = delegate?.collectionView?(collectionView!, canRemoveAt: cellFakeView!.indexPath!) ?? false
         if !overlapped && removable {
             // will remove the item
-            self.delegate?.collectionView?(self.collectionView!, willRemoveAtIndexPath: self.cellFakeView!.indexPath!)
+            self.delegate?.collectionView?(self.collectionView!, willRemoveAt: self.cellFakeView!.indexPath!)
             collectionView!.performBatchUpdates({
                 // Remove the item only if the delegate object have the callback.
-                if let callback = self.delegate?.collectionView(_: didRemoveAtIndexPath:) {
+                if let callback = self.delegate?.collectionView(_: didRemoveAt:) {
                     self.collectionView!.deleteItems(at: [self.cellFakeView!.indexPath!])
                     
                     // did remove the item
