@@ -26,8 +26,6 @@ import UIKit
 }
 
 @objc public protocol RAReorderableLayoutDataSource: UICollectionViewDataSource {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int
-
     @objc optional func collectionView(_ collectionView: UICollectionView, reorderingItemAlphaInSection section: Int) -> CGFloat
     @objc optional func scrollTrigerEdgeInsetsInCollectionView(_ collectionView: UICollectionView) -> UIEdgeInsets
     @objc optional func scrollTrigerPaddingInCollectionView(_ collectionView: UICollectionView) -> UIEdgeInsets
@@ -146,7 +144,9 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
     private var triggerPaddingEnd: CGFloat {
         return scrollDirection == .vertical ? trigerPadding.bottom : trigerPadding.right
     }
-    
+
+    private var observation: NSKeyValueObservation?
+
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         configureObserver()
@@ -158,7 +158,7 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
     }
     
     deinit {
-        removeObserver(self, forKeyPath: "collectionView")
+        observation?.invalidate()
     }
     
     override public func prepare() {
@@ -196,16 +196,10 @@ public class RAReorderableLayout: UICollectionViewFlowLayout, UIGestureRecognize
         return attributesArray
     }
     
-    public override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        if keyPath == "collectionView" {
-            setUpGestureRecognizers()
-        }else {
-            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
-        }
-    }
-    
     private func configureObserver() {
-        addObserver(self, forKeyPath: "collectionView", options: [], context: nil)
+        observation = observe(\.collectionView) { (me, change) in
+            me.setUpGestureRecognizers()
+        }
     }
     
     private func setUpDisplayLink() {
